@@ -8,4 +8,4 @@ class Zombie(Enemy.Enemy):
         return self.gold_value
 
     def taunt(self):
-        print("Zombie: \"Braaaaains\" ")
+        print(f"{self.getName()} \"Braaaaains\" ")

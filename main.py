@@ -1,294 +1,363 @@
-import Goblin
+from data.levels import LEVEL_DATA, LEVEL_CONNECTIONS
+from data.enemies import ENEMY_CLASSES
+from Level import Level
+from Player import Player
 import Armor
-import Player
-import Zombie
 import Weapon
-import Wolf
 import random
-import Bandit
 import time
 
-P1 = Player.Player("Player")
-# # TEMPORARY ASSERTION
-P1.setGold(500)
-
 # obj list to store the weapon objects for the shop
-shop_weapons = []
-wooden_club = Weapon.Weapon("Wooden Club", 250, 15, "A heavy wooden club")
-iron_sword = Weapon.Weapon("Iron Sword", 500, 25, "A sharp sword made of iron")
-katana_sword = Weapon.Weapon("Katana", 1000, 50, "An extremely sharp katana")
+shop_weapons = [
+    Weapon.Weapon("Dagger", 100, 5, "A small, sharp dagger"),
+    Weapon.Weapon("Wooden Club", 250, 15, "A heavy wooden club"),
+    Weapon.Weapon("Iron Sword", 500, 25, "A sharp sword made of iron"),
+    Weapon.Weapon("Katana", 1000, 50, "An extremely sharp katana"),
+    Weapon.Weapon("Samurai Sword", 1250, 75, "A legendary samurai sword")
 
-shop_weapons.append(wooden_club)
-shop_weapons.append(iron_sword)
-shop_weapons.append(katana_sword)
+]
+shop_armor = [
+    Armor.Armor("Leather Armor", 350, 10, "Armor made from animal skin"),
+    Armor.Armor("Chainmail Armor", 1000, 20, "Armor made from chainmail"),
+    Armor.Armor("Plate Armor", 2000, 40, "Heavy plate armor"),
+]
 
-shop_armor = []
-leather_armor = Armor.Armor("Leather Armor", 350, 10, "Armor made from animal skin")
-chainmail_armor = Armor.Armor("Chainmail Armor", 1000, 20, "Armor made from chainmail")
 
-shop_armor.append(leather_armor)
-shop_armor.append(chainmail_armor)
-
-currentLevel = " "
-
-def viewInventory(obj):
-    print("________________________")
-    print("You have", obj.getGold(), "gold")
-    print("You have", obj.getPotions(), "potions")
-    print("Your current weapon is a", obj.weapon.getName(), "(+", obj.weapon.getDamage(), "damage)", "|",
-          obj.weapon.getDescription())
-    print("Your current armor is", obj.armor.getName(), "(+", obj.armor.getProtection(), "block)", "|", obj.armor.getDescription())
+def viewInventory(player):
+    print("\n" + "=" * 50)
+    print("         I N V E N T O R Y")
+    print("=" * 50)
+    print(f"Gold: {player.getGold()}")
+    print(f"Potions: {player.getPotions()}")
+    print(f"Health: {player.getHealth()}")
+    print()
+    print(f"Weapon: {player.weapon.getName()} (+{player.weapon.getDamage()} dmg) | {player.weapon.getDescription()}")
+    print(f"Armor:  {player.armor.getName()} (+{player.armor.getProtection()} block) | {player.armor.getDescription()}")
+    print("=" * 50)
     while True:
         try:
-            print("Press 0 to exit inventory, or 1 to heal with a potion")
-            inv_op = int(input())
+            print("\n[0] Exit Inventory")
+            print("[1] Use a potion to heal")
+            inv_op = int(input("Choice: "))
         except ValueError:
-            print("Invalid choice")
+            print("Invalid choice.")
             continue
-        if inv_op < 0 or inv_op > 3:
-            print("Invalid choice")
+        if inv_op < 0 or inv_op > 1:
+            print("Invalid choice.")
         else:
             break
     if inv_op == 1:
-        obj.heal()
-    elif inv_op == 0:
-        pass
-    print("_________________________________________")
+        player.heal()
+    # end of function
+    print("=" * 50 + "\n")
 
-def fightSequence(level):
-    enemy_list = []
-    if level == "forest":
-        Z = Zombie.Zombie()
-        W1 = Wolf.Wolf()
-        enemy_list.append(Z)
-        enemy_list.append(W1)
-    elif level == "dark_forest":
-        B = Bandit.Bandit()
-        G = Goblin.Goblin()
-        enemy_list.append(B)
-        enemy_list.append(G)
-    x = random.randrange(0, len(enemy_list))
-    print("Fighting a", enemy_list[x].getName(), "with", enemy_list[x].getHealth(), "health")
-    enemy_list[x].taunt()
-    while enemy_list[x].isAlive() and P1.isAlive():
-        while True:
-            try:
-                print("1. Attack")
-                print("2. Use Potion (", P1.getPotions(), "potions left )")
-                fight_choice = int(input())
-            except ValueError:
-                print("Invalid choice")
-                # better try again... Return to the start of the loop
-                continue
-            if fight_choice > 2 or fight_choice < 1:
-                print("Invalid Choice")
-                continue
-            else:
-                break
+
+
+def fight_sequence(player, level_obj):
+    enemy = level_obj.getRandomEnemy(ENEMY_CLASSES)
+    
+    print("\n" + "=" * 50)
+    print("             F I G H T !")
+    print("=" * 50)
+    print(f"You encounter a {enemy.getName()} with {enemy.getHealth()} health!")
+    enemy.taunt()
+    print("=" * 50 + "\n")
+    time.sleep(1)
+
+    # main fight loop
+    while enemy.isAlive() and player.isAlive():
+        print(f"Your Health: {player.getHealth():.0f}")
+        print(f"Enemy Health: {enemy.getHealth():.0f}/{enemy.getMax_health()}")
+        print()
+        print("[1] Attack")
+        print(f"[2] Use Potion ({player.getPotions()} left)")
+        print(f"[3] Inspect {enemy.getName()}")
+        
+        try:
+            fight_choice = int(input("Choice: "))
+        except ValueError:
+            print("\nInvalid choice.\n")
+            continue
+        
+        print()  # blank line
+
         if fight_choice == 1:
-            P1.attack(enemy_list[x])
+            # Player attacks
+            player.attack(enemy)
+            print()
+            time.sleep(0.8)
         elif fight_choice == 2:
-            P1.heal()
+            player.heal()
+            print()
+            time.sleep(0.8)
+        elif fight_choice == 3:
+            enemy.printStats()
+            print()
+            continue
         else:
-            print("invalid choice")
-        enemy_list[x].attack(P1)
+            print("Invalid choice.\n")
+            continue
+        
+        # Enemy's turn (if still alive)
+        if enemy.isAlive():
+            enemy.attack(player)
+            print()
+            time.sleep(1)
 
+    # After fight ends
+    if not player.isAlive():
+        print("You have fallen in battle...")
+        print("You have been killed and lost", player.getGold() / 2, "gold")
+        player.setGold(player.getGold() / 2)
+    else:
+        print(f"You have defeated the {enemy.getName()}!\n")
+    print("=" * 50 + "\n")
+    time.sleep(1)
 
-# main game loop
-while True:
-    # check if player is "coming back" from being dead. if so, reset health to 100
-    if not P1.isAlive():
-        P1.setHealth(100)
-    print("__________________")
-    currentLevel = "city"
-    choice = int(input("Press 1 to enter the Forest\nPress 2 to visit the shop\nPress 3 to view inventory\nPress 4 to Play Roulette"))
-    if choice == 1:
-        print("_______________________")
-        print("You enter the Forest")
-        while True and P1.isAlive():
-            currentLevel = "forest"
-            print("Player HP:", P1.getHealth())
-            print("Press 1 to fight an enemy\nPress 2 to advance to the Dark Forest, 3 to view inventory, or 0 to turn back to the city")
-            x = int(input())
-            if x == 0:
-                print("You head back into the city...")
-                break
-            elif x == 1:
-                fightSequence(currentLevel)
-            elif x == 2:
-                print("___________________________")
-                print("You enter the Dark Forest")
-                while True and P1.isAlive():
-                    currentLevel = "dark_forest"
-                    print("Press 1 to fight an enemy or 3 to view inventory\nPress 0 to turn back to the Forest")
-                    print("Player HP:", P1.getHealth())
-                    x1 = int(input())
-                    if x1 == 0:
-                        print("You head back into the Forest...")
-                        break
-                    elif x1 == 1:
-                        fightSequence(currentLevel)
-                    elif x1 == 3:
-                        viewInventory(P1)
-            elif x == 3:
-                viewInventory(P1)
-
-    elif choice == 2:
-        print("________________________")
-        print("Welcome to the shop!")
-        while(True):
-            print("You have", P1.getGold(), "gold")
-            print("Press [1] to buy a potion (100 gold)\npress [2] to view weapons for sale\nPress [3] to view Armor\nor [4] to exit\n")
-            shopMenu_choice = int(input())
-            if shopMenu_choice == 1:
-                if P1.getGold() >= 100:
-                    print("Potion purchased")
-                    P1.setGold(P1.getGold() - 100)
-                    P1.setPotions(P1.getPotions() + 1)
-                else:
-                    print("Not enough gold to purchase potion")
-            elif shopMenu_choice == 2:
-                while(True):
-                    count = 0
-                    for obj in shop_weapons:
-                        print(count + 1, "- ", end="")
-                        obj.shopDesc()
-                        count += 1
-                    print("Press 0 to return")
-                    buy_weapon_choice = int(input())
-                    # needs error handling in case user enters out of index bounds
-                    if buy_weapon_choice == 0:
-                        break
-                    elif P1.getGold() < shop_weapons[buy_weapon_choice - 1].getCost():
-                        print("You can't afford this item - ", shop_weapons[buy_weapon_choice - 1].getName())
-                    elif P1.getGold() >= shop_weapons[buy_weapon_choice - 1].getCost():
-                        if P1.weapon == shop_weapons[buy_weapon_choice - 1]:
-                            print("You already own this weapon...")
-                        elif P1.weapon.getDamage() > shop_weapons[buy_weapon_choice - 1].getDamage():
-                            print("Why would you want this?")
-                        else:
-                            P1.setGold(P1.getGold() - shop_weapons[buy_weapon_choice - 1].getCost())
-                            print("You have bought - ", shop_weapons[buy_weapon_choice - 1].getName())
-                            print("You now have", P1.getGold(), "gold")
-                            P1.setWeapon(shop_weapons[buy_weapon_choice - 1])
-            elif shopMenu_choice == 3:
-                while True:
-                    a_count = 0
-                    for obj in shop_armor:
-                        print(a_count + 1, "- ", end="")
-                        obj.shopDesc()
-                        a_count += 1
-                    print("Press 0 to return")
-                    buy_armor_choice = int(input())
-                    if buy_armor_choice == 0:
-                        break
-                    elif P1.getGold() < shop_armor[buy_armor_choice - 1].getCost():
-                        print("You can't afford this item - ", shop_armor[buy_armor_choice - 1].getName())
-                    elif P1.getGold() >= shop_armor[buy_armor_choice - 1].getCost():
-                        if P1.armor == shop_armor[buy_armor_choice - 1]:
-                            print("You already own this Armor...")
-                        elif P1.armor.getProtection() > shop_armor[buy_armor_choice - 1].getProtection():
-                            print("Why would you want this?")
-                        else:
-                            P1.setGold(P1.getGold() - shop_armor[buy_armor_choice - 1].getCost())
-                            print("You have bought - ", shop_armor[buy_armor_choice - 1].getName())
-                            print("You now have", P1.getGold(), "gold")
-                            P1.setArmor(shop_armor[buy_armor_choice - 1])
+def shop_logic(player):
+    while True:
+        print("\n--- Welcome to the Shop! ---")
+        print(f"You have {player.getGold()} gold.")
+        print(f"Health: {player.getHealth()}")
+        print("[1] Buy a potion (100 gold)")
+        print("[2] View weapons for sale")
+        print("[3] View armor for sale")
+        print("[0] Return to city")
+        choice = input("Choice: ")
+        
+        if choice == "0":
+            break
+        elif choice == "1":
+            if player.getGold() >= 100:
+                player.setGold(player.getGold() - 100)
+                player.setPotions(player.getPotions() + 1)
+                print("Potion purchased!")
             else:
-                break
-    elif choice == 3:
-        viewInventory(P1)
+                print("Not enough gold for a potion.")
+        elif choice == "2":
+            # Show weapons
+            for i, w in enumerate(shop_weapons, start=1):
+                print(f"[{i}] {w.getName()} - Cost: {w.getCost()} - Damage: {w.getDamage()}")
+            print("[0] Go Back")
+            buy_choice = int(input("Choice: "))
+            if buy_choice == 0:
+                pass
+            elif 1 <= buy_choice <= len(shop_weapons):
+                chosen_weapon = shop_weapons[buy_choice - 1]
+                if player.getGold() < chosen_weapon.getCost():
+                    print("Not enough gold.")
+                else:
+                    # Maybe check if the new weapon is "better"
+                    player.setGold(player.getGold() - chosen_weapon.getCost())
+                    player.setWeapon(chosen_weapon)
+                    print("Weapon purchased!")
+        elif choice == "3":
+            # Show armors
+            for i, a in enumerate(shop_armor, start=1):
+                print(f"[{i}] {a.getName()} - Cost: {a.getCost()} - Protection: {a.getProtection()}")
+            print("[0] Go Back")
+            buy_choice = int(input("Choice: "))
+            if buy_choice == 0:
+                pass
+            elif 1 <= buy_choice <= len(shop_armor):
+                chosen_armor = shop_armor[buy_choice - 1]
+                if player.getGold() < chosen_armor.getCost():
+                    print("Not enough gold.")
+                else:
+                    player.setGold(player.getGold() - chosen_armor.getCost())
+                    player.setArmor(chosen_armor)
+                    print("Armor purchased!")
+        else:
+            print("Invalid choice.")
 
-    elif choice == 4:
-        print("\n\n________________\nWelcome to Roulette")
-        red_numbers = [1, 3, 5, 7, 9, 12, 14, 16, 19, 21, 23, 25, 27, 30, 32, 34, 36]
-        black_numbers = [2, 4, 6, 8, 10, 11, 13, 15, 17, 18, 20, 22, 24, 26, 28, 29, 31, 33, 35]
-        while True:
-            print("You have", P1.getGold(), "gold")
-            player_wagers = []
-            total_wager = 0
-            amt = 0
-            bet_color = int(input("Bet black [1], Red [2], Neither [0], Exit [99]"))
-            if bet_color == 99:
-                break
-            if bet_color == 1:
-                print("How much to bet on black?")
-                amt = int(input())
-                if amt > P1.getGold():
-                    print("You don't have the gold for that...")
-                    break
-                else:
-                    print("You have" ,P1.getGold() - amt, "gold left to bet")
-            if bet_color == 2:
-                print("How much to bet on red?")
-                amt = int(input())
-                if amt > P1.getGold():
-                    print("You don't have the gold for that...")
-                    break
-                else:
-                    print("You have", P1.getGold() - amt, "gold left to bet")
-            print("How much gold would you like to wager per spot? ([99] to exit)")
-            wager = int(input())
-            if wager == 99:
-                break
-            if wager > P1.getGold():
-                print("You do not have enough gold for that bet")
+def roulette_logic(player):
+    print("\n\n________________\nWelcome to Roulette")
+    red_numbers = [1, 3, 5, 7, 9, 12, 14, 16, 19, 21, 23, 25, 27, 30, 32, 34, 36]
+    black_numbers = [2, 4, 6, 8, 10, 11, 13, 15, 17, 18, 20, 22, 24, 26, 28, 29, 31, 33, 35]
+    while True:
+        print("You have", player.getGold(), "gold")
+        player_wagers = []
+        total_wager = 0
+        amt = 0
+        bet_color = int(input("Bet black [1], Red [2], Neither [0], Exit [99]"))
+        if bet_color == 99:
+            break
+        if bet_color == 1:
+            print("How much to bet on black?")
+            amt = int(input())
+            if amt > player.getGold():
+                print("You don't have the gold for that...")
+                continue
             else:
-                print("Which spots would you like to wager? ([99] to finish betting)")
-                count = 0
-                while True:
-                    xr = int(input())
-                    if xr == 99:
-                        break
-                    elif xr < 0 or xr > 36:
-                        print("You can't bet this number")
-                    elif (total_wager + wager + amt) > P1.getGold():
-                        print("You don't have enough gold to make this bet \n[99] to finish betting")
+                print("You have" ,player.getGold() - amt, "gold left to bet")
+        if bet_color == 2:
+            print("How much to bet on red?")
+            amt = int(input())
+            if amt > player.getGold():
+                print("You don't have the gold for that...")
+                break
+            else:
+                print("You have", player.getGold() - amt, "gold left to bet")
+        print("How much gold would you like to wager per spot? ([99] to exit)")
+        wager = int(input())
+        if wager == 99:
+            break
+        if wager > player.getGold():
+            print("You do not have enough gold for that bet")
+        else:
+            print("Which spots would you like to wager? ([99] to finish betting)")
+            count = 0
+            while True:
+                xr = int(input())
+                if xr == 99:
+                    break
+                elif xr < 0 or xr > 36:
+                    print("You can't bet this number")
+                elif (total_wager + wager + amt) > player.getGold():
+                    print("You don't have enough gold to make this bet \n[99] to finish betting")
+                else:
+                    if xr in player_wagers:
+                        print("You have already bet this number")
                     else:
-                        if xr in player_wagers:
-                            print("You have already bet this number")
-                        else:
-                            player_wagers.append(xr)
-                            print("Bet", wager, "gold on", xr)
-                            count = count + 1
-                            total_wager = wager * count
-                P1.setGold(P1.getGold() - (total_wager + amt))
-                print("Numbers bet:\n___________")
-                for i in player_wagers:
-                    print(i)
-                    time.sleep(.5)
-                color = ""
+                        player_wagers.append(xr)
+                        print("Bet", wager, "gold on", xr)
+                        count = count + 1
+                        total_wager = wager * count
+            player.setGold(player.getGold() - (total_wager + amt))
+            print("Numbers bet:\n___________")
+            for i in player_wagers:
+                print(i)
+                time.sleep(.5)
+            color = ""
+            if bet_color == 2:
+                color = "red"
+            elif bet_color == 1:
+                color = "black"
+            print("Total wager:", total_wager + amt, "(", total_wager, "on numbers,", amt, "on color", color,")")
+            win_num = random.randrange(0, 37)
+            print("Spinning...")
+            time.sleep(3)
+            print("\n\n\n_______________________________\nWinning number:", win_num, end=" (")
+            if win_num in red_numbers:
+                print("Red number)")
                 if bet_color == 2:
-                    color = "red"
-                elif bet_color == 1:
-                    color = "black"
-                print("Total wager:", total_wager + amt, "(", total_wager, "on numbers,", amt, "on color", color,")")
-                win_num = random.randrange(0, 37)
-                print("Spinning...")
-                time.sleep(3)
-                print("\n\n\n_______________________________\nWinning number:", win_num, end=" (")
-                if win_num in red_numbers:
-                    print("Red number)")
-                    if bet_color == 2:
-                        print("You won", amt, "gold on red!")
-                        P1.setGold(P1.getGold() + (amt * 2))
-                    if bet_color == 1:
-                        print("You lost", amt, "gold on black")
-                elif win_num in black_numbers:
-                    print("Black number)")
-                    if bet_color == 1:
-                        print("You won", amt, "gold on black!")
-                        P1.setGold(P1.getGold() + (amt * 2))
-                    if bet_color == 2:
-                        print("You lost", amt, "gold on red!")
-                else:
-                    print("Green number)")
-                if win_num in player_wagers:
-                    print("You won", (wager * 35) - wager, "gold on", win_num)
-                    print("")
-                    P1.setGold(P1.getGold() + (wager * 35))
-                else:
-                    print("You didn't bet this number")
-                    print("You lost", total_wager, "gold on your numbers")
-                    print("")
+                    print("You won", amt, "gold on red!")
+                    player.setGold(player.getGold() + (amt * 2))
+                if bet_color == 1:
+                    print("You lost", amt, "gold on black")
+            elif win_num in black_numbers:
+                print("Black number)")
+                if bet_color == 1:
+                    print("You won", amt, "gold on black!")
+                    player.setGold(player.getGold() + (amt * 2))
+                if bet_color == 2:
+                    print("You lost", amt, "gold on red!")
+            else:
+                print("Green number)")
+            if win_num in player_wagers:
+                print("You won", (wager * 35) - wager, "gold on", win_num)
+                print("")
+                player.setGold(player.getGold() + (wager * 35))
+            else:
+                print("You didn't bet this number")
+                print("You lost", total_wager, "gold on your numbers")
+                print("")
+ 
+def main():
+    player = Player("Player")
+    player.setGold(50000)  # for testing
 
+    # Create a dictionary of Level objects from LEVEL_DATA
+    levels = {}
+    for level_name, data in LEVEL_DATA.items():
+        levels[level_name] = Level(
+            name=level_name,
+            description=data["description"],
+            enemy_names=data["enemies"]
+        )
+
+    current_location = "city"
+
+    while True:
+        # If dead, restore health
+        if not player.isAlive():
+            player.setHealth(100)
+            current_location = "city"
+
+        # 1. Describe current location
+        current_level_obj = levels[current_location]
+        current_level_obj.describe()
+        
+        # 2. Check if this is a “combat zone” by seeing if it has enemies
+        if current_level_obj.enemy_names:
+            print(f"Health: {player.getHealth()}")
+            # Let the player choose to fight or not
+            print("[1] Fight an enemy")
+            print("[2] View inventory")
+            print("[3] Go somewhere else")
+            choice = input("Choice: ")
+
+            if choice == "1":
+                fight_sequence(player, current_level_obj)
+                continue  # then re-describe, re-offer fight as long as we stay here
+            elif choice == "2":
+                viewInventory(player)
+                continue
+            elif choice == "3":
+                pass  # proceed to traveling
+            else:
+                print("Invalid choice.")
+                continue
+        else:
+            # For "city," "shop," or "roulette," do special logic
+            if current_location == "shop":
+                shop_logic(player)
+                # after returning from shop, either stay or move
+            elif current_location == "roulette":
+                roulette_logic(player)
+                # same idea: after roulette, either stay or move
+            else:
+                # city or any other non-combat zone
+                print("[1] View inventory")
+                print("[2] Go somewhere else")
+                choice = input("Choice: ")
+
+                if choice == "1":
+                    viewInventory(player)
+                    continue
+                elif choice == "2":
+                    pass
+                else:
+                    print("Invalid choice.")
+                    continue
+
+        # 3. Show possible neighbors for current_location
+        neighbors = LEVEL_CONNECTIONS[current_location]
+        if not neighbors:
+            print("There are no exits from here!")
+            break  # or do something else
+
+        print("\nWhere would you like to go next?")
+        for i, loc in enumerate(neighbors, start=1):
+            print(f"[{i}] {loc}")
+        print("")
+        print("[99] Cancel")
+        print("[0] Quit Game")
+        move_choice = input("Choice: ")
+
+        if move_choice == "0":
+            print("Goodbye!")
+            break
+        elif move_choice.isdigit():
+            move_choice = int(move_choice)
+            if move_choice == 99:
+                pass
+            if 1 <= move_choice <= len(neighbors):
+                current_location = neighbors[move_choice - 1]
+            else:
+                print("Invalid choice.")
+        else:
+            print("Invalid choice.")
+
+if __name__ == "__main__":
+    main()

@@ -9,4 +9,4 @@ class Goblin(Enemy.Enemy):
         return self.gold_value
 
     def taunt(self):
-        print("Goblin: \"Time is money, friend!\"")
+        print(f"{self.getName()}: \"Time is money, friend!\"")

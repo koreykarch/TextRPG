@@ -9,4 +9,4 @@ class Wolf(Enemy.Enemy):
         return self.gold_value
 
     def taunt(self):
-        print("Wolf: \"Grrrr.....\" ")
+        print(f"{self.getName()}: \"Grrrr.....\" ")

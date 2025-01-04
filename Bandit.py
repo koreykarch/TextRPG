@@ -9,4 +9,4 @@ class Bandit(Enemy.Enemy):
         return self.gold_value
 
     def taunt(self):
-        print("Bandit: \"Give me your gold or die!\" ")
+        print(f"{self.getName()}: \"Give me your gold or die!\" ")
